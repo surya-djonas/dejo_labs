@@ -21,6 +21,7 @@ A production-grade, full-stack web application built with modern technologies fo
 - ✅ `middleware.ts` - Next.js middleware for auth
 - ✅ `prisma/schema.prisma` - Database schema
 
+
 ### Documentation (4 files)
 - ✅ `README.md` - Comprehensive project documentation
 - ✅ `SETUP.md` - Quick setup guide
