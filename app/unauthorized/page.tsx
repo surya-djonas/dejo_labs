@@ -4,7 +4,7 @@ export default function UnauthorizedPage() {
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4">403 - Unauthorized</h1>
         <p className="text-muted-foreground mb-6">
-          You don't have permission to access this page.
+          You don&apos;t have permission to access this page.
         </p>
         <a
           href="/dashboard"
