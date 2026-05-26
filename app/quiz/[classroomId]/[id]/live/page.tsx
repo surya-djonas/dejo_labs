@@ -24,7 +24,7 @@ export default function LiveQuizPage() {
   } = useQuizSocket(quizId, classroomId);
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | number | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | number | string[] | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [questions] = useState([
@@ -70,7 +70,7 @@ export default function LiveQuizPage() {
     if (isSubmitted) return;
     
     if (question.questionType === "MULTIPLE_SELECT") {
-      const current = selectedAnswer || [];
+      const current = Array.isArray(selectedAnswer) ? selectedAnswer : [];
       if (current.includes(option)) {
         setSelectedAnswer(current.filter((o: string) => o !== option));
       } else {

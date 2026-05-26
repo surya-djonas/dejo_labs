@@ -1,4 +1,6 @@
-export type { User, Classroom, Quiz, QuizQuestion, QuizAnswer, LiveSession } from "@prisma/client";
+import type { User, Classroom, Quiz, QuizQuestion, QuizAnswer, LiveSession, ClassroomMember, ActivityLog } from "@prisma/client";
+
+export type { User, Classroom, Quiz, QuizQuestion, QuizAnswer, LiveSession };
 
 export interface QuizWithQuestions extends Quiz {
   questions: QuizQuestion[];
@@ -11,7 +13,7 @@ export interface ClassroomWithMembers extends Classroom {
 
 export interface QuizSubmission {
   questionId: string;
-  answer: any;
+  answer: string | number | string[];
   timeTaken: number;
 }
 

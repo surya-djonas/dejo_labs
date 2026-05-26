@@ -5,16 +5,17 @@ import { prisma } from "@/lib/prisma";
 // POST /api/classrooms/[id]/join - Join classroom with invite code
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await requireAuth();
     const { inviteCode } = await request.json();
     
     // Find classroom
     const classroom = await prisma.classroom.findUnique({
       where: { 
-        id: params.id,
+        id,
         inviteCode,
       },
     });
@@ -30,7 +31,7 @@ export async function POST(
     const existingMember = await prisma.classroomMember.findUnique({
       where: {
         classroomId_userId: {
-          classroomId: params.id,
+          classroomId: id,
           userId: session.user.id,
         },
       },
@@ -46,7 +47,7 @@ export async function POST(
     // Add member
     const member = await prisma.classroomMember.create({
       data: {
-        classroomId: params.id,
+        classroomId: id,
         userId: session.user.id,
       },
     });
@@ -57,7 +58,7 @@ export async function POST(
         userId: session.user.id,
         action: "join_classroom",
         entity: "classroom",
-        entityId: params.id,
+        entityId: id,
         metadata: { classroomName: classroom.name },
       },
     });
