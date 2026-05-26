@@ -1,0 +1,381 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum QuestionType {
+  MCQ
+  MULTIPLE_SELECT
+  TRUE_FALSE
+  SHORT_ANSWER
+  NUMERICAL
+  POLL
+}
+
+enum QuizStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model User {
+  id                String              @id @default(cuid())
+  email             String              @unique
+  emailVerified     DateTime?
+  name              String?
+  image             String?
+  password          String?
+  role              Role                @default(STUDENT)
+  isActive          Boolean             @default(true)
+  isSuspended       Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  deletedAt         DateTime?
+  
+  // Relations
+  accounts          Account[]
+  sessions          Session[]
+  classroomsOwned   Classroom[]
+  classroomMembers  ClassroomMember[]
+  quizzesCreated    Quiz[]
+  quizAnswers       QuizAnswer[]
+  attendance        Attendance[]
+  notifications     Notification[]
+  assignmentsSub    AssignmentSubmission[]
+  activityLogs      ActivityLog[]
+  
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Classroom {
+  id              String            @id @default(cuid())
+  name            String
+  description     String?           @db.Text
+  subject         String?
+  inviteCode      String            @unique
+  teacherId       String
+  coverImage      String?
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+  
+  // Relations
+  teacher         User              @relation(fields: [teacherId], references: [id])
+  members         ClassroomMember[]
+  quizzes         Quiz[]
+  liveSessions    LiveSession[]
+  materials       Material[]
+  assignments     Assignment[]
+  announcements   Announcement[]
+  
+  @@index([teacherId])
+  @@index([inviteCode])
+  @@map("classrooms")
+}
+
+model ClassroomMember {
+  id           String    @id @default(cuid())
+  classroomId  String
+  userId       String
+  joinedAt     DateTime  @default(now())
+  isActive     Boolean   @default(true)
+  
+  classroom    Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([classroomId, userId])
+  @@index([classroomId])
+  @@index([userId])
+  @@map("classroom_members")
+}
+
+model LiveSession {
+  id              String       @id @default(cuid())
+  classroomId     String
+  title           String
+  meetLink        String?
+  scheduledAt     DateTime
+  startedAt       DateTime?
+  endedAt         DateTime?
+  isActive        Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  classroom       Classroom    @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  attendance      Attendance[]
+  
+  @@index([classroomId])
+  @@index([scheduledAt])
+  @@map("live_sessions")
+}
+
+model Attendance {
+  id            String       @id @default(cuid())
+  sessionId     String
+  userId        String
+  joinedAt      DateTime     @default(now())
+  leftAt        DateTime?
+  duration      Int?         // in seconds
+  isLate        Boolean      @default(false)
+  
+  session       LiveSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([sessionId, userId])
+  @@index([sessionId])
+  @@index([userId])
+  @@map("attendance")
+}
+
+model Quiz {
+  id              String         @id @default(cuid())
+  classroomId     String
+  createdById     String
+  title           String
+  description     String?        @db.Text
+  status          QuizStatus     @default(DRAFT)
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  endedAt         DateTime?
+  duration        Int?           // in seconds
+  totalPoints     Int            @default(0)
+  isLive          Boolean        @default(false)
+  showLeaderboard Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+  
+  classroom       Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  createdBy       User           @relation(fields: [createdById], references: [id])
+  questions       QuizQuestion[]
+  answers         QuizAnswer[]
+  analytics       QuizAnalytics?
+  
+  @@index([classroomId])
+  @@index([createdById])
+  @@index([status])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id              String         @id @default(cuid())
+  quizId          String
+  questionType    QuestionType
+  questionText    String         @db.Text
+  options         Json?          // Array of options for MCQ
+  correctAnswer   Json?          // Correct answer(s)
+  points          Int            @default(1)
+  order           Int
+  timeLimit       Int?           // in seconds
+  image           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  quiz            Quiz           @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers         QuizAnswer[]
+  
+  @@index([quizId])
+  @@map("quiz_questions")
+}
+
+model QuizAnswer {
+  id              String        @id @default(cuid())
+  quizId          String
+  questionId      String
+  userId          String
+  answer          Json          // Student's answer
+  isCorrect       Boolean?
+  pointsEarned    Int           @default(0)
+  timeTaken       Int?          // in seconds
+  submittedAt     DateTime      @default(now())
+  
+  quiz            Quiz          @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question        QuizQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([quizId, questionId, userId])
+  @@index([quizId])
+  @@index([userId])
+  @@index([questionId])
+  @@map("quiz_answers")
+}
+
+model QuizAnalytics {
+  id                    String   @id @default(cuid())
+  quizId                String   @unique
+  totalParticipants     Int      @default(0)
+  averageScore          Float    @default(0)
+  averageTimeTaken      Int      @default(0)
+  participationRate     Float    @default(0)
+  topScorerId           String?
+  questionStats         Json?    // Detailed question-wise stats
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  quiz                  Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  
+  @@index([quizId])
+  @@map("quiz_analytics")
+}
+
+model Material {
+  id           String    @id @default(cuid())
+  classroomId  String
+  title        String
+  description  String?   @db.Text
+  fileUrl      String
+  fileType     String
+  fileSize     Int
+  uploadedAt   DateTime  @default(now())
+  
+  classroom    Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  
+  @@index([classroomId])
+  @@map("materials")
+}
+
+model Assignment {
+  id              String                  @id @default(cuid())
+  classroomId     String
+  title           String
+  description     String                  @db.Text
+  dueDate         DateTime
+  totalPoints     Int                     @default(100)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  
+  classroom       Classroom               @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  submissions     AssignmentSubmission[]
+  
+  @@index([classroomId])
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id              String     @id @default(cuid())
+  assignmentId    String
+  userId          String
+  content         String?    @db.Text
+  fileUrl         String?
+  pointsEarned    Int?
+  feedback        String?    @db.Text
+  submittedAt     DateTime   @default(now())
+  gradedAt        DateTime?
+  
+  assignment      Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([assignmentId, userId])
+  @@index([assignmentId])
+  @@index([userId])
+  @@map("assignment_submissions")
+}
+
+model Announcement {
+  id           String    @id @default(cuid())
+  classroomId  String
+  title        String
+  content      String    @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  classroom    Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  
+  @@index([classroomId])
+  @@map("announcements")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String   @db.Text
+  type      String   // quiz_started, assignment_posted, etc.
+  isRead    Boolean  @default(false)
+  data      Json?    // Additional data
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  action      String   // login, logout, create_quiz, etc.
+  entity      String?  // quiz, classroom, etc.
+  entityId    String?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
