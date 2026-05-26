@@ -1,11 +1,10 @@
 import { requireAdmin } from "@/lib/auth-helpers";
-import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, School, FileQuestion, Activity } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminPage() {
-  const session = await requireAdmin();
+  await requireAdmin();
   
   // Fetch statistics
   const totalUsers = await prisma.user.count();

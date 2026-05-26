@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuizSocket } from "@/hooks/use-socket";
 import { QuizTimer } from "@/components/quiz/quiz-timer";
@@ -24,10 +24,10 @@ export default function LiveQuizPage() {
   } = useQuizSocket(quizId, classroomId);
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<any>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [startTime, setStartTime] = useState<number>(Date.now());
-  const [questions, setQuestions] = useState([
+  const [questions] = useState([
     {
       id: "q1",
       questionType: "MCQ",

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Users, BarChart, Calendar, Plus } from "lucide-react";
+import { BookOpen, BarChart, Calendar, Plus } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await auth();

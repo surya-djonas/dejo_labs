@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validate input
-    const validatedData = quizSchema.parse(body);
+    quizSchema.parse(body);
     
     const { classroomId, questions, ...quizData } = body;
     
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Calculate total points
-    const totalPoints = questions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
+    const totalPoints = questions.reduce((sum: number, q: { points?: number }) => sum + (q.points || 1), 0);
     
     // Create quiz with questions
     const quiz = await prisma.quiz.create({
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         createdById: session.user.id,
         totalPoints,
         questions: {
-          create: questions.map((q: any, index: number) => ({
+          create: questions.map((q: Record<string, unknown>, index: number) => ({
             ...q,
             order: index,
           })),
