@@ -17,7 +17,7 @@ export async function getRedisClient() {
 }
 
 // Cache helper functions
-export async function cacheSet(key: string, value: any, ttl: number = 3600) {
+export async function cacheSet(key: string, value: unknown, ttl: number = 3600) {
   const client = await getRedisClient();
   await client.setEx(key, ttl, JSON.stringify(value));
 }

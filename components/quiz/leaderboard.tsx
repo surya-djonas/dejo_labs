@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Clock, Target } from "lucide-react";
 
@@ -61,9 +62,11 @@ export function Leaderboard({ entries }: LeaderboardProps) {
               </div>
               
               {entry.userImage ? (
-                <img
+                <Image
                   src={entry.userImage}
                   alt={entry.userName}
+                  width={40}
+                  height={40}
                   className="w-10 h-10 rounded-full"
                 />
               ) : (
